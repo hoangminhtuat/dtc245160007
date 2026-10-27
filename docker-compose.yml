@@ -55,6 +55,45 @@ services:
     depends_on:
       - wordpress
 
+  # --- CỤM GIÁM SÁT (YÊU CẦU 4 & 6) ---
+  prometheus:
+    image: prom/prometheus:latest
+    restart: always
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus:/etc/prometheus
+    networks:
+      - backend
+
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:v0.47.0
+    restart: always
+    privileged: true
+    ports:
+      - "8081:8080" # Đổi port ngoài thành 8081 để tránh xung đột với phpMyAdmin
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+      - /dev/disk/:/dev/disk:ro
+    networks:
+      - backend
+
+  grafana:
+    image: grafana/grafana:latest
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=MatKhauGrafana!@#2024 # Hardening: Đặt mật khẩu mạnh
+    networks:
+      - backend
+    depends_on:
+      - prometheus
+    user: "472" # Hardening: Chạy với user id mặc định của Grafana, không dùng root
+
 volumes:
   db_data:
   wp_data:
